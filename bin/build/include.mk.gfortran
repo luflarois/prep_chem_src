@@ -44,9 +44,10 @@ LIBNCARG=$(BASE)/libncarg-$(UTILS_VERSION)-$(OPT).a
 
 # NETCDF libraries
 
-NETCDF=/home/lufla/apps
-NETCDF_INC=-I$(NETCDF)/include
-NETCDF_LIBS=-L$(NETCDF)/lib -lnetcdff -lnetcdf
+NETCDFC=/home/lufla/apps
+NETCDFF=/home/lufla/apps
+NETCDF_INC=-I$(NETCDFC)/include -I$(NETCDFF)/include
+NETCDF_LIBS=-L$(NETCDFF)/lib -lnetcdff -L$(NETCDFC)/lib -lnetcdf
 
 # HDF libraries
 
