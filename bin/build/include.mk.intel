@@ -45,10 +45,11 @@ LIBNCARG=$(BASE)/libncarg-$(UTILS_VERSION)-$(OPT).a
 # NETCDF libraries
 
 
-NETCDF=/opt/lib-intel/netcdf-4.1.3
+NETCDFC=/opt/lib-intel/netcdf-4.1.3
+NETCDFF=/opt/lib-intel/netcdf-4.1.3
 
-NETCDF_INC=-I$(NETCDF)/include 
-NETCDF_LIBS=-L$(NETCDF)/lib -lnetcdff -lnetcdf
+NETCDF_INC=-I$(NETCDFF)/include -I$(NETCDFC)/include
+NETCDF_LIBS=-L$(NETCDFF)/lib -lnetcdff -L$(NETCDFF)/lib -lnetcdf
 #NETCDF_LIBS=-L$(NETCDF)/lib -lnetcdff
 
 # HDF libraries
