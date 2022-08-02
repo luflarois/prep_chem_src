@@ -348,7 +348,7 @@ subroutine process_bbbem(iyear,imon,iday,ihour,ng,ngrids,n1,n2,n3,rlat,rlon,rlan
 
         do nfn=1,nfiles 
            open(iunit,status='old',file=fnames(nfn))
-	   print*,"opening file=",nfn,fnames(nfn)
+	         print*,"opening file=",nfn,fnames(nfn)
            call read_fre(iunit,ntfocos &
                 , fire_sensor_gt_1km(QLONG)%fire_prop &
                 , fire_sensor_gt_1km(QLATI)%fire_prop &
@@ -512,7 +512,7 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
      ic=ic+1
      !read(iunit,*,end=110) itime_modis_foco(ic),qlon(ic),qlat(ic)!,QFRPW(ic)
      read(iunit,*,end=110) qlon(ic),qlat(ic),qarea(ic)
-     qarea(ic)=qarea(ic)*1.e+6!m^2
+     qarea(ic)=area_por_foco!
      !get mean area
      if(qarea(ic)>0) then
         i_mean=i_mean+1
@@ -550,9 +550,9 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
      !character*120 dum
      real, dimension(n) :: qlat,qlon,qarea,qsize,qfrpw,qtime
      !integer, dimension(n) :: itime_abba_foco
-     integer itime_abba,idate_abba,nlinhas,n,ic
+     integer itime_abba,idate_abba,nlinhas,n,ic,ilixo
      integer i,idum,iunit,fire_flag,iveg,nidate_abba,nitime_abba
-     real temp,t4,t11,satzen,pix_size
+     real temp,t4,t11,satzen,pix_size,lixo
      character*120 dum(5)
 
 
@@ -571,7 +571,6 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
      idate_abba = nidate_abba
      itime_abba = nitime_abba
 
-
      !ic = 0 >> IC nao pode ser zerado, pois esta se acumulando todos os focos!
      do i=1,n
         fire_flag = 9999
@@ -583,25 +582,48 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
               read(iunit,*,end=110) qlon(ic),qlat(ic),satzen,pix_size,t4,t11 &
                    ,qarea(ic),temp,qfrpw(ic),iveg,fire_flag
            endif
+        else if (dum(1)(1:3)=='###') then !CAMS-GOES
+       		read(iunit,*,end=110) qlon(ic),qlat(ic),satzen,pix_size,t4,t11 &
+                 ,qarea(ic),temp,qfrpw(ic),lixo,ilixo,fire_flag,iveg
+			fire_flag=1
+            !print*,ic,qlon(ic),qlat(ic),qarea(ic),fire_flag        
+        else if ( index(dum(2), 'GMAI') .ne. 0 ) then
+              read(iunit,*,end=110) qlon(ic),qlat(ic),satzen,pix_size,t4,t11 &
+                  ,qarea(ic),temp,qfrpw(ic),iveg,fire_flag
+        else
+              read(iunit,*,end=110) qlon(ic),qlat(ic),t4,t11,qarea(ic),temp &
+                  ,iveg,fire_flag
+        endif
+
+        qsize(ic)=qarea(ic)
+
 !        else
 !           print*,'=> No WF_ABBA fire data found in data file'
-        endif
+!        endif
 
-        if ( index(dum(2), 'GMAI') .ne. 0 ) then
-           read(iunit,*,end=110) qlon(ic),qlat(ic),satzen,pix_size,t4,t11 &
-           ,qarea(ic),temp,qfrpw(ic),iveg,fire_flag
-        else ! old version
-           read(iunit,*,end=110) qlon(ic),qlat(ic),t4,t11,qarea(ic),temp,iveg,fire_flag
-        endif
+!        if ( index(dum(2), 'GMAI') .ne. 0 ) then
+!           read(iunit,*,end=110) qlon(ic),qlat(ic),satzen,pix_size,t4,t11 &
+!           ,qarea(ic),temp,qfrpw(ic),iveg,fire_flag
+!              qsize(ic)=qarea(ic)
+!        endif
 
-        ! print*,'qlon qlat=',qlon(ic),qlat(ic),qarea(ic),qfrpw(ic)
+!        if ( index(dum(2), 'WF_ABBA') .ne. 0 ) then
+!           if ( index(dum(2), ' 6.0') .ne. 0) then
+!                read(iunit,*,end=110) qlon(ic),qlat(ic),t4,t11,qarea(ic),temp,iveg,fire_flag
+!                qsize(ic)=qarea(ic)
+!           endif
+!        endif
+        
+               ! print*,'qlon qlat=',qlon(ic),qlat(ic),qarea(ic),qfrpw(ic)
         ! size of fire 
-        qsize(ic)=qarea(ic)
+       ! qsize(ic)=qarea(ic)
+        
+        !print *,qsize(ic)
 
         ! itime_abba_foco(ic)=itime_abba ! hora da ocorrencia do foco
         qtime(ic) = float(itime_abba)
         ! Elimina focos com baixa confiabilidade IFF(fire_flag) =4 ou 5 
-        if( fire_flag .gt. 3) ic = ic - 1    
+        if( fire_flag .gt. 3) ic = ic - 1
      enddo
 110  continue
      ic = ic - 1   ! numero total de focos
@@ -735,7 +757,8 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
      real area_media,area_total
      data  nfocos_iden/0/		      
      real filt,time_filt,time_abbai,time_abbaj,time1,time2
-     data filt/0.1/        ! filtro em graus
+     !data filt/0.1/        ! filtro em graus
+     data filt/0.025/ !Atualizado para o novo GOES16
      data time_filt/2./    ! filtro em horas
      idummy=0
 
@@ -855,6 +878,9 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
         if( qarea(i) .gt. 0.) then
            area_media=area_media+qarea(i)
            ncount=ncount+1
+           
+           print *,area_media,qarea(i),ncount
+           
         endif
      enddo
      if(ncount>0)then 
@@ -1085,6 +1111,9 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
       use grid_dims_out, only: use_bbem
      
      implicit none
+
+     real, parameter :: factArea=1.0 !Adjust of fire area
+
      integer, parameter :: nveg=17, nveg_olson=97
      integer :: nfocos,ifoc,i,iesp,nc,itpm
      CHARACTER (len=*) veg_type_data_dir,carbon_density_data_dir,fuel_data_dir
@@ -1238,7 +1267,7 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
         	if(iveg_agreg(ifoc) == 0) cycle ! eliminates false detection of fires (over ocean/water
         	! bodies/iced land)   
 
-        	biomass_burned =  fc(iveg(ifoc))*bas_by_fire(ifoc)*qarea(ifoc) ! kg[dry biomass burned]	
+        	biomass_burned =  fc(iveg(ifoc))*bas_by_fire(ifoc)*qarea(ifoc)*factArea ! kg[dry biomass burned]	
 	
         	qflam(ifoc)    =  flaming(iveg_agreg(ifoc))
 
@@ -1253,7 +1282,7 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
         	!      if(qlon(ifoc) > -20.) then 
         	!       fx=2.  ! Africa
         	!      else
-        	fx=1.3 !S.America
+        	fx=1.0 !S.America
         	!      endif
 
         	biomass_burned =  fx*biomass_burned
@@ -1974,7 +2003,8 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
               qveg(ifoc) = igbp
            endif
         endif
-     enddo
+        write(88,fmt='(I6.6,1X,I3.3)') ifoc,qveg(ifoc)
+      enddo
      return
    end subroutine le_veg
    !------------------------------------------------------------------------------------------------------

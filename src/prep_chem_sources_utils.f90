@@ -239,23 +239,37 @@ implicit none
 
 character*(*) flnm
 character(len=128) :: flnm2
-integer lenf,nv
+!AFS 
+!integer :: lenf,nv,t
+integer(kind=8) :: lenf,nv,t,nptLocal
+
+print*,  "Largest value for nv is ", huge(nv)
+!AFS
 
 
 if(allocated(anal_table)) deallocate(anal_table)
 
 ! open analysis file and read in commons
-
+print *,'LFR->',trim(flnm)
 flnm2=flnm(1:len_trim(flnm))//'-head.txt'
+print *,'LFR->',trim(flnm2)
 open(10,file=flnm2(1:len_trim(flnm2)),status='old')
+print *,'LFR->',trim(flnm2)
 read(10,*) nvbtab
 allocate (anal_table(nvbtab))
 do nv=1,nvbtab
+   print *,'NV=',nv
    read(10,*)  anal_table(nv)%string   &
-	      ,anal_table(nv)%npointer  &
+	      ,nptLOcal &!anal_table(nv)%npointer  &
 	      ,anal_table(nv)%idim_type  &
 	      ,anal_table(nv)%ngrid  &
 	      ,anal_table(nv)%nvalues
+   anal_table(nv)%npointer=nptLocal
+!AFS
+inquire(anal_table(nv)%npointer,size=t)
+print*, 'inquire---------------------> ',anal_table(nv)%npointer
+!AFS
+
 enddo
 
 call commio('ANAL','READ',10)
