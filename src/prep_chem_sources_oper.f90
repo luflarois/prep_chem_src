@@ -226,7 +226,7 @@ do ng=1,ngrids
         	iinf,jinf,rmi,  		   &
   		proj_to_ll(1:len_trim(proj_to_ll)),'VMP') ! mean_type='VMP' ! vizinho mais proximo
   	       !proj_to_ll(1:len_trim(proj_to_ll)),mean_type(1:len_trim(mean_type)))
-
+print *, 'LFR-DBG:Oper: ',ng,nygrads(ng)
   !_................
   call define_lim(ng,nxgrads(ng),nygrads(ng),	       &
     	         dep_glat(1,ng),dep_glat(2,ng),        &

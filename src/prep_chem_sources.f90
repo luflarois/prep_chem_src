@@ -526,6 +526,7 @@ character (len=*), intent(in)  :: rams_anal_prefix
 integer :: i,iv,ng,nfn,nfiles,ivar_type,nvert
 character (len=240) :: fnames(maxfiles),car_var(3),dim_var(3)& 
                       ,name_var(3),units_var(3)
+character(len=5) :: cy
 
 data (car_var(iv), iv=1,3)/'lat', 'lon', 'land'/
 data (dim_var(iv), iv=1,3)/'2d', '2d', '3d'/
@@ -562,13 +563,22 @@ do ng=1,ngrids
   !.................
   ! determine the output dimension and arrays:
   !
+!print *,'LFR-DBG_1: ',ng,nygrads(ng)
   call geo_grid(nnxp(ng),nnyp(ng),r2d(:,:,1),r2d(:,:,2),  &
                dep_glon(1,ng),dep_glon(2,ng),	  &
                dep_glat(1,ng),dep_glat(2,ng),	  &
                rlatmin,rlatmax,rlonmin,rlonmax,   &
                nxgrads(ng),nygrads(ng), 	  &
                proj_to_ll(1:len_trim(proj_to_ll)))
-  !.................            
+
+               write(cy,fmt='(I5.5)') nnyp(ng)
+!write(67,fmt='(2(I6.6,1X))') nnxp(1),nnyp(1)
+!do i=1,nnxp(ng)
+!   write(67,fmt='(I5.5,1X,'//cy//'(F8.3))') i,r2d(i,:,1)
+!enddo
+
+  !.................
+!print *,'LFR-DBG_2: ',ng,nygrads(ng)            
   call Matriz_interp(ng,nxgrads(ng),nygrads(ng),   &
         	nnxp(ng),nnyp(ng),  	           &
         	dep_glat(1,ng),dep_glat(2,ng),     &
@@ -576,7 +586,7 @@ do ng=1,ngrids
         	iinf,jinf,rmi,  		   &
   		proj_to_ll(1:len_trim(proj_to_ll)),'VMP') ! mean_type='VMP' ! vizinho mais proximo
   	       !proj_to_ll(1:len_trim(proj_to_ll)),mean_type(1:len_trim(mean_type)))
-
+!print *,'LFR-DBG_3: ',ng,nygrads(ng)
   !_................
   call define_lim(ng,nxgrads(ng),nygrads(ng),	       &
     	         dep_glat(1,ng),dep_glat(2,ng),        &
@@ -1405,7 +1415,8 @@ call write_maproj(ng,iunit_bin,wfln_maproj)
 
 !- open and write the grads control file
    call write_ctl(ng,iunit_bin,wfln(:),ihour,iday,imon,iyear,nvert, ihtran)
-
+!print *,'LFR-DBG: ',nxb(ng),nxa(ng),nyb(ng),nya(ng),output_byte_size,output_byte_size*(nxb(ng)-nxa(ng)+1)*(nyb(ng)-nya(ng)+1)
+call flush(6)
 !- open the binary data file for GRADS vizualization file
    open(iunit_bin,file=wfln(1),form='unformatted',access='direct',status='unknown',  &
         recl=output_byte_size*(nxb(ng)-nxa(ng)+1)*(nyb(ng)-nya(ng)+1))	  

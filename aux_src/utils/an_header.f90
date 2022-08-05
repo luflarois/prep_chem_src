@@ -10,7 +10,8 @@ module an_header
 
 type head_table
    character(len=16) :: string
-   integer :: npointer,idim_type,ngrid,nvalues
+   integer(kind=8) :: npointer
+   integer :: idim_type,ngrid,nvalues
 end type
 
 type (head_table), allocatable,save :: anal_table(:)

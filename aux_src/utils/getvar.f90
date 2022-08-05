@@ -21,7 +21,7 @@ integer function RAMS_getvar(string, ngrd, a, b, flnm)
   character        :: cgrid*1, flng*128, errmsg*120
   logical          :: there
   integer          :: ni
-  integer          :: npts, iword
+  integer(kind=8)          :: npts, iword
 	integer, external :: rams_c_open
 	integer :: ierr	
   print*,'getvar:',string
@@ -42,6 +42,7 @@ integer function RAMS_getvar(string, ngrd, a, b, flnm)
         endif
 
         npts=anal_table(ni)%nvalues
+print *,'LFR-DBG GETVAR: ',npts,rank(b),trim(string)
         itype=anal_table(ni)%idim_type
         iword=anal_table(ni)%npointer
         

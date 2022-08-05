@@ -44,14 +44,14 @@ LIBNCARG=$(BASE)/libncarg-$(UTILS_VERSION)-$(OPT).a
 
 # NETCDF libraries
 
-NETCDFC=/home/lufla/apps
-NETCDFF=/home/lufla/apps
+NETCDFC=/opt/ohpc/pub/libs/gnu9/impi/netcdf/4.7.4/
+NETCDFF=/opt/ohpc/pub/libs/gnu9/impi/netcdf-fortran/4.5.3/
 NETCDF_INC=-I$(NETCDFC)/include -I$(NETCDFF)/include
 NETCDF_LIBS=-L$(NETCDFF)/lib -lnetcdff -L$(NETCDFC)/lib -lnetcdf
 
 # HDF libraries
 
-HDF5=/home/lufla/apps
+HDF5=/opt/ohpc/pub/libs/gnu9/impi/hdf5/1.10.8/
 HDF5_INC=-I$(HDF5)/include
 HDF5_LIB=-L$(HDF5)/lib -lhdf5hl_fortran -lhdf5_fortran -lhdf5_hl -lhdf5 -ldl -L/opt/lib-gfortran/zlib-1.2.5/lib -lz -ldl
      
@@ -67,6 +67,7 @@ C_LOADER=gcc
 LIBS=
 MOD_EXT=mod
 
+#F_OPTS= -fcheck=bounds,pointer -ffree-form -ffree-line-length-none -cpp -D$(CHEM) -O3 -frecord-marker=4
 F_OPTS= -ffree-form -ffree-line-length-none -cpp -D$(CHEM) -O3 -frecord-marker=4
 C_OPTS= -O3 #-DUNDERSCORE -DLITTLE
 LOADER_OPTS= -O3

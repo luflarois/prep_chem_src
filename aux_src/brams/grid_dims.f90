@@ -24,12 +24,12 @@ Module grid_dims
 !                       level interpolated from opposite hemispheric grid
 
    integer, parameter :: maxgrds=8
-   integer, parameter :: nxpmax=903, nypmax=903, nzpmax=132, nzgmax=20
+   integer, parameter :: nxpmax=1200, nypmax=1200, nzpmax=132, nzgmax=20
    integer, parameter :: maxsclr=150, maxhp=1000
 
 !        Set MAXDIM to the largest of NXPMAX,NYPMAX,NZPMAX+10,NZGMAX
 
-   integer, parameter :: maxdim=903
+   integer, parameter :: maxdim=1200
 
 !        maxmach is the maximum number of processors that can be used in a 
 !          parallel run

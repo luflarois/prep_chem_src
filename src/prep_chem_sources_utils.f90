@@ -100,8 +100,11 @@ integer function RAMS_getvar(stringg,itype,ngrd,a,b,flnm)
 use an_header
 
 implicit none
+integer, parameter :: i8 = selected_int_kind(14) !Kind for 64-bits Integer Numbers
 integer :: itype,ngrd,il,lastchar,ill
-integer :: ierr_getvar,ifound,ni,npts,iword
+integer :: ierr_getvar,ifound,ni
+
+integer(kind=i8) :: npts,iword
 character*(*) flnm,cgrid*1,flng*240,errmsg*120,stringg,string*10
 logical there
 real :: a(*),b(*)
@@ -134,6 +137,7 @@ do ni=1,nvbtab
          return
       endif
       npts=anal_table(ni)%nvalues
+!print *,'LFR-DBG GETVAR: ',npts,rank(b),trim(string),'Kind=',kind(iword)
       itype=anal_table(ni)%idim_type
       iword=anal_table(ni)%npointer            
 !
@@ -250,15 +254,15 @@ print*,  "Largest value for nv is ", huge(nv)
 if(allocated(anal_table)) deallocate(anal_table)
 
 ! open analysis file and read in commons
-print *,'LFR->',trim(flnm)
+!print *,'LFR->',trim(flnm)
 flnm2=flnm(1:len_trim(flnm))//'-head.txt'
-print *,'LFR->',trim(flnm2)
+!print *,'LFR->',trim(flnm2)
 open(10,file=flnm2(1:len_trim(flnm2)),status='old')
-print *,'LFR->',trim(flnm2)
+!print *,'LFR->',trim(flnm2)
 read(10,*) nvbtab
 allocate (anal_table(nvbtab))
+write (*,fmt='(A4,1X,A32,1X,A18,1X,A1,1X,A1,1X,A18)') 'nv','string','pointer','T','G','nvalues'
 do nv=1,nvbtab
-   print *,'NV=',nv
    read(10,*)  anal_table(nv)%string   &
 	      ,nptLOcal &!anal_table(nv)%npointer  &
 	      ,anal_table(nv)%idim_type  &
@@ -267,9 +271,9 @@ do nv=1,nvbtab
    anal_table(nv)%npointer=nptLocal
 !AFS
 inquire(anal_table(nv)%npointer,size=t)
-print*, 'inquire---------------------> ',anal_table(nv)%npointer
 !AFS
-
+  write(*,fmt='(I4.4,1X,A32,1X,I18,1X,I1,1X,I1,1X,I18)') nv,trim(anal_table(nv)%string),anal_table(nv)%npointer &
+         ,anal_table(nv)%idim_type,anal_table(nv)%ngrid,anal_table(nv)%nvalues
 enddo
 
 call commio('ANAL','READ',10)
@@ -676,6 +680,9 @@ implicit none
        nlat=abs(int(((latf-lati))/dlat))+1
        nxb=min(nxa+nlon,nxg)
        nyb=min(nya+nlat,nyg)
+
+!print *,'->LFR-DBG: ',latf,lati,dlat,nlat,nya,nyg,"NYB: ",nyb
+
        rlon1=glong(nxa)
        rlat1=glatg(nya)
 !----------19-07-2001

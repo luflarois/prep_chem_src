@@ -23,8 +23,11 @@
 #include <string.h>
 #endif
 
+/* DEBUG-ALF */
+/* #include <time.h> */
+
 /* Prototypes not needed except for C++
-int vfscale(float *,int ,double *,double *);
+int vfscale(float *, long int, double *, double *);
 void *malloc(int);
 void *free(void *);
 */
@@ -51,8 +54,8 @@ int iralloc(int *memtot,int *ia,int *ioff)
   imaddr = (int)iaddr;
   *ioff=(imaddr-ifaddr);
 #else
-  ifaddr = (int )ia;
-  imaddr = (int )iaddr;
+  ifaddr = (int)ia;
+  imaddr = (int)iaddr;
   *ioff = (imaddr-ifaddr)/sizeof(float);
 #endif
 
@@ -105,7 +108,7 @@ FILE *ramsfile;
 
 #ifdef STARDENT 
 
-int extern rams_c_open_(filename,faccess)
+int rams_c_open(filename,faccess)
      struct  { char *string; int len; } *filename,*faccess;
 {
   extern FILE *ramsfile;
@@ -116,11 +119,12 @@ int extern rams_c_open_(filename,faccess)
 }
 #else
 
-int rams_c_open_(char *filename,char *faccess)
+int rams_c_open(char *filename,char *faccess)
 
 {
   extern FILE *ramsfile;
 
+  /* printf(" C_open-%s \n",filename); */
   ramsfile=fopen(filename,faccess);
  /* perror("rams_c_open"); */
   return(0);
@@ -129,7 +133,7 @@ int rams_c_open_(char *filename,char *faccess)
 
 /*********************************************************/
 
-int rams_c_close_()
+int rams_c_close()
 {
   extern FILE *ramsfile;
   int istat;
@@ -171,7 +175,7 @@ int rams_c_read(int *fbyte,int *numbytes,int *a)
 }
 
 /*********************************************************/
-int rams_c_read_char_(int *fbyte,int *numbytes,int *a)
+int rams_c_read_char(int *fbyte,int *numbytes,int *a)
  
 {
   int retcode;
@@ -202,21 +206,27 @@ int rams_c_write(int *fbyte,int *numbytes,int *a)
 #define SMALL_OFFSET 1.e-20
 #define VFORMMASK 63 
 
-void vfirecr_(int *unit,float *a,int *n,char *type,char *b,int *irec)    
+void vfirecr(int *unit, float *a, long int *n, char *type, char *b, 
+	     long int *irec)    
 {
   extern FILE *ramsfile;
   int i, j, nn, nbits, nchs;
   float bias, fact, inverse_fact;
   unsigned vnum, char_count;
 
-  fseek( ramsfile, *irec, 0);
-  fread(b,1,80, ramsfile);
-  sscanf(b,"%d %d %f %f",&nn, &nbits, &bias, &fact);
+/*   fseek( ramsfile, *irec, 0); */
+  fseek( ramsfile, *irec, SEEK_SET);
+  fread(b, 1, 80, ramsfile);
+  sscanf(b,"%ld %d %f %f",&nn, &nbits, &bias, &fact);
+  printf("Data found: nn=%ld, nbits=%d, bias=%f, fact=%f\n",
+	 nn, nbits, bias, fact);
+
   inverse_fact = 1./fact;
   nchs=nbits/6;
   fread(b,1,*n * nchs,ramsfile);
   if( nn != *n )
     printf("Word count mismatch on vfirec record\n  Words on record - %d\n  Words expected  - %d\n ",nn,*n);
+
   for(i = 0, char_count = 0; i < *n; i++)
   {
     for(j = 0,vnum=0; j < nchs; j++, char_count++)
@@ -235,25 +245,31 @@ void vfirecr_(int *unit,float *a,int *n,char *type,char *b,int *irec)
 
 /*************************************************************************/
 
+/* vforecr: write an ASCII coded (on nbits) portable version of array a[0:n-1] into */
+/*          file ramsfile returning final record position irec.                     */
+/*          Procedure arguments scr and cscr are scratch areas of size n.           */
+/*          Procedure arguments unit and type are unused.                           */
+
 char vc[65] = 
      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{|";
 
-void vforecr(int *unit,float *a,int *n,int *nbits,float *scr
-            ,char *cscr,char *type,int *irec)
+void vforecr(int *unit, float *a, long int *n, int *nbits, float *scr,
+            char *cscr, char *type, long int *irec)
 {
   extern FILE *ramsfile;
   extern char vc[];
   double amax, amin, bias, fact; 
   int i, j, char_count, nchs;
   float ftemp;
-  extern int vfscale(float*, int, double*, double* );
+  extern int vfscale(float*, long int, double*, double* );
 
   vfscale( a, *n, &amin, &amax);
 
   bias = -amin + SMALL_OFFSET;
-  fact = (pow( 2.0, (double)*nbits)-1 ) / ( bias + amax +SMALL_OFFSET);
-  fprintf(ramsfile,"%8d%8d%20.10e%20.10e                        "
-          ,*n,*nbits,bias,fact);
+  fact = (pow( 2.0, (double)*nbits)-1 ) / ( bias + amax + SMALL_OFFSET);
+
+  fprintf(ramsfile,"%8ld%8d%20.10e%20.10e                        "
+	  ,*n,*nbits,bias,fact);
 
  /* assume for now that transformation is linear  */   
 
@@ -269,13 +285,13 @@ void vforecr(int *unit,float *a,int *n,int *nbits,float *scr
           vc[( (unsigned)ftemp >> (i * BITFIELDLENGTH) ) & VFORMMASK];
   }
 
-  fwrite(cscr , sizeof( char ), *n * nchs, ramsfile );
-  *irec=ftell(ramsfile);
+  fwrite(cscr , sizeof( char ), *n * nchs, ramsfile ); 
+  *irec=ftell(ramsfile); 
 }
 
 /*************************************************************************/
 
-int vfscale(float *a,int n,double *min,double *max )
+int vfscale(float *a, long int n, double *min, double *max)
 { 
   int i;
   
@@ -291,4 +307,117 @@ int vfscale(float *a,int n,double *min,double *max )
 }
 
 
+/*  ==========================================
 
+    Rewrite basic i/o handling functions
+    to allow multiple files simultaneously
+    opened, controlled by fortran accessible
+    integer "unit" (JP: unrelated to fortran io unit)
+
+    ==========================================*/
+
+#define MAXFILES 10
+
+static FILE *filerams[MAXFILES];
+static int  fileused[MAXFILES]={0,0,0,0,0,0,0,0,0,0};
+
+void rams_c_open_u(char *filename, char *faccess, int *unit)
+
+{
+  int i;
+  for (i=0; i<MAXFILES && fileused[i]; i++); /* search for unused entry */
+  if (i < MAXFILES && (filerams[i]=fopen(filename,faccess)) != NULL) {
+    fileused[i]=1;
+    *unit=i;
+  }
+  else 
+    *unit=-1;       /* return error */
+}
+
+void rams_c_close_u(int *unit)
+{
+  int istat;
+  if (*unit >= 0 && *unit < MAXFILES && fileused[*unit]) {
+    fileused[*unit]=0;
+    *unit=fclose(filerams[*unit]);
+  }
+  else 
+    *unit=-1;
+}
+
+
+void vfirecr_u(int *unit, float *a, long int *n, char *type, char *b, 
+	     long int *irec)    
+{
+  int i, j, nn, nbits, nchs;
+  float bias, fact, inverse_fact;
+  unsigned vnum, char_count;
+
+  fseek( filerams[*unit], *irec, SEEK_SET);
+  fread(b, 1, 80, filerams[*unit]);
+  sscanf(b,"%ld %d %f %f",&nn, &nbits, &bias, &fact);
+  printf("Data found: nn=%ld, nbits=%d, bias=%f, fact=%f\n",
+	 nn, nbits, bias, fact);
+
+  inverse_fact = 1./fact;
+  nchs=nbits/6;
+  fread(b,1,*n * nchs,filerams[*unit]);
+  if( nn != *n )
+    printf("Word count mismatch on vfirec record\n  Words on record - %d\n  Words expected  - %d\n ",nn,*n);
+
+  for(i = 0, char_count = 0; i < *n; i++)
+  {
+    for(j = 0,vnum=0; j < nchs; j++, char_count++)
+    {
+      vnum = vnum << BITFIELDLENGTH;
+      if( isdigit( b[char_count] ) ) 
+               vnum = vnum | (unsigned)b[char_count] - 48;
+      else if( isupper( b[char_count] ) ) 
+               vnum = vnum |(unsigned)b[char_count] - 55;
+      else 
+               vnum = vnum | (unsigned)b[char_count] - 61;
+    }
+    a[i] = vnum*inverse_fact - bias;
+  }
+}
+
+
+void vforecr_u(int *unit, float *a, long int *n, int *nbits, float *scr,
+            char *cscr, char *type, long int *irec)
+{
+  extern char vc[];
+  double amax, amin, bias, fact; 
+  int i, j, char_count, nchs;
+  float ftemp;
+  double den;
+  extern int vfscale(float*, long int, double*, double* );
+
+  vfscale( a, *n, &amin, &amax);
+
+  bias = -amin + SMALL_OFFSET;
+  den  = bias + amax;
+  den += SMALL_OFFSET;
+/*   printf("DEBUG-ALF:vforecr:bias=%g,amin=%g,SO=%g,amax=%g,den=%g,den2=%g\n", */
+/* 	 bias,amin,SMALL_OFFSET,amax,(bias+amax+SMALL_OFFSET),den); */
+/*   fact = (pow( 2.0, (double)*nbits)-1 ) / ( bias + amax + SMALL_OFFSET); */
+  fact = (pow( 2.0, (double)*nbits)-1 )/den;
+
+  fprintf(filerams[*unit],"%8ld%8d%20.10e%20.10e                        "
+	  ,*n,*nbits,bias,fact);
+
+
+  for( i = 0; i < *n;  i++ )
+    scr[i] = ( a[i] + bias ) * fact;
+
+  nchs = *nbits / BITFIELDLENGTH;
+
+  for( j = 0, char_count = 0 ; j < *n; j++ ) {
+    ftemp=scr[j];
+    for( i = nchs-1; i >= 0; i--, char_count++ )
+      cscr[char_count]= 
+          vc[( (unsigned)ftemp >> (i * BITFIELDLENGTH) ) & VFORMMASK];
+  }
+
+  fwrite(cscr , sizeof( char ), *n * nchs, filerams[*unit] ); 
+  *irec=ftell(filerams[*unit]); 
+}

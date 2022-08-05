@@ -2003,7 +2003,7 @@ subroutine read_extra(iunit,n,qlon,qlat,qarea,qsize,QFRPW,qtime,ic,OFN)
               qveg(ifoc) = igbp
            endif
         endif
-        write(88,fmt='(I6.6,1X,I3.3)') ifoc,qveg(ifoc)
+        !,fmt='(I6.6,1X,I3.3)') ifoc,qveg(ifoc)
       enddo
      return
    end subroutine le_veg
